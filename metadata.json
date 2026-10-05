@@ -1,0 +1,7 @@
+{
+  "name": "SERVICE - International Universal Commercial Communication Platform",
+  "description": "Metadata-driven dynamic modular platform with verified contact unlocks, AES-256 encrypted storage, and country-wise feature flags.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
