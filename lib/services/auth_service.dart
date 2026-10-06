@@ -14,9 +14,11 @@ class AuthService {
 
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
-  bool get isAuthenticated => _currentUser != null;
+  bool get isAuthenticated => _currentUser != null && _currentUser!.token != null;
+  bool get isVerified => _currentUser != null && _currentUser!.isVerified;
 
-  /// Initialize and load saved session
+  /// Initialize and load saved session.
+  /// If no user exists, returns null so app opens directly to AuthScreen!
   Future<UserModel?> initialize() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -27,27 +29,100 @@ class AuthService {
         _currentUser = UserModel.fromJson(jsonDecode(userJson));
         return _currentUser;
       }
-    } catch (e) {
-      // In-memory fallback
+    } catch (_) {}
+
+    _currentUser = null;
+    return null;
+  }
+
+  /// Request OTP for phone number
+  Future<String> sendPhoneOtp(String phone) async {
+    // Simulates SMS gateway
+    await Future.delayed(const Duration(milliseconds: 500));
+    return '1234'; // Default simulation OTP code
+  }
+
+  /// Complete registration with Phone + OTP + Name + Referral Code
+  Future<UserModel> registerWithOtp({
+    required String phone,
+    required String otp,
+    required String fullName,
+    String? referralCode,
+  }) async {
+    if (otp != '1234' && otp.length != 4 && otp.length != 6) {
+      throw Exception('সঠিক ওটিপি কোড লিখুন (টেস্ট কোড: 1234)');
     }
 
-    // Default pre-authenticated founder/user for smooth development test
-    if (_currentUser == null) {
-      _currentUser = UserModel(
-        id: 'usr_8812',
-        fullName: 'তানভীর আহমেদ',
-        phone: '+8801711223344',
-        email: 'tanvir@service.com',
-        role: 'provider',
-        isVerified: true,
-        level: 'Gold',
-        avgRating: 4.8,
-        referralCode: 'TANVIR100',
-        walletBalance: 200.0,
-        token: 'mock_jwt_token_8812',
-      );
+    final cleanPhone = phone.trim().replaceAll(' ', '');
+
+    final newUser = UserModel(
+      id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
+      fullName: fullName.isNotEmpty ? fullName : 'মোবাইল ব্যবহারকারী',
+      phone: cleanPhone.startsWith('+') ? cleanPhone : '+880$cleanPhone',
+      email: '$cleanPhone@service.com',
+      role: 'user',
+      isVerified: false, // Default is NOT verified until NID is provided!
+      level: 'New',
+      avgRating: 5.0,
+      referralCode: 'REF${cleanPhone.length >= 4 ? cleanPhone.substring(cleanPhone.length - 4) : '99'}',
+      walletBalance: (referralCode != null && referralCode.isNotEmpty) ? 200.0 : 100.0,
+      token: 'jwt_token_${DateTime.now().millisecondsSinceEpoch}',
+    );
+
+    await _saveSession(newUser);
+    return newUser;
+  }
+
+  /// Register with Email/Phone and Password
+  Future<UserModel> register({
+    required String fullName,
+    required String phone,
+    required String password,
+    String? referralCode,
+  }) async {
+    final cleanPhone = phone.trim().replaceAll(' ', '');
+    final newUser = UserModel(
+      id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
+      fullName: fullName.isNotEmpty ? fullName : 'নতুন ব্যবহারকারী',
+      phone: cleanPhone.startsWith('+') ? cleanPhone : '+880$cleanPhone',
+      email: '$cleanPhone@service.com',
+      role: 'user',
+      isVerified: false,
+      level: 'New',
+      avgRating: 5.0,
+      referralCode: 'REF${cleanPhone.length >= 4 ? cleanPhone.substring(cleanPhone.length - 4) : '99'}',
+      walletBalance: (referralCode != null && referralCode.isNotEmpty) ? 200.0 : 100.0,
+      token: 'jwt_token_${DateTime.now().millisecondsSinceEpoch}',
+    );
+
+    await _saveSession(newUser);
+    return newUser;
+  }
+
+  /// Verify OTP and Login
+  Future<UserModel> verifyOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    if (otp != '1234' && otp.length != 4 && otp.length != 6) {
+      throw Exception('সঠিক ওটিপি কোড দিন (টেস্ট ওটিপি: 1234)');
     }
-    return _currentUser;
+    final cleanPhone = phone.trim().replaceAll(' ', '');
+    final user = UserModel(
+      id: 'usr_${cleanPhone.hashCode.abs()}',
+      fullName: 'মোবাইল ব্যবহারকারী',
+      phone: cleanPhone.startsWith('+') ? cleanPhone : '+880$cleanPhone',
+      email: '$cleanPhone@service.com',
+      role: 'user',
+      isVerified: false,
+      level: 'New',
+      avgRating: 5.0,
+      referralCode: 'OTP${cleanPhone.length >= 4 ? cleanPhone.substring(cleanPhone.length - 4) : '77'}',
+      walletBalance: 100.0,
+      token: 'jwt_token_${DateTime.now().millisecondsSinceEpoch}',
+    );
+    await _saveSession(user);
+    return user;
   }
 
   /// Login with Phone/Email and Password
@@ -73,21 +148,20 @@ class AuthService {
         await _saveSession(user);
         return user;
       }
-    } catch (_) {
-      // Graceful offline fallback
-    }
+    } catch (_) {}
 
-    // Deterministic login simulation for testing
+    // Deterministic simulation
+    final clean = identifier.trim();
     final simulatedUser = UserModel(
-      id: 'usr_${identifier.hashCode.abs()}',
-      fullName: identifier.contains('@') ? identifier.split('@')[0] : 'ইউজার (${identifier.substring(identifier.length > 4 ? identifier.length - 4 : 0)})',
-      phone: identifier.startsWith('+') ? identifier : '+880$identifier',
-      email: identifier.contains('@') ? identifier : 'user@service.com',
-      role: 'provider',
-      isVerified: true,
+      id: 'usr_${clean.hashCode.abs()}',
+      fullName: clean.contains('@') ? clean.split('@')[0] : 'তানভীর আহমেদ',
+      phone: clean.startsWith('+') ? clean : '+880$clean',
+      email: clean.contains('@') ? clean : '$clean@service.com',
+      role: 'user',
+      isVerified: false, // New session requires NID verify or keeps saved state
       level: 'Gold',
       avgRating: 4.8,
-      referralCode: 'REF${identifier.substring(identifier.length > 3 ? identifier.length - 3 : 0).toUpperCase()}',
+      referralCode: 'ARIF123',
       walletBalance: 100.0,
       token: 'jwt_${DateTime.now().millisecondsSinceEpoch}',
     );
@@ -96,81 +170,24 @@ class AuthService {
     return simulatedUser;
   }
 
-  /// Register new user with optional referral code (+100 BDT bonus)
-  Future<UserModel> register({
-    required String fullName,
-    required String phone,
-    required String password,
-    String? referralCode,
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/auth/register'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'full_name': fullName,
-              'phone_number': phone,
-              'password': password,
-              'referral_code': referralCode,
-            }),
-          )
-          .timeout(const Duration(seconds: 3));
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final user = UserModel.fromJson(data['user'] ?? data);
-        await _saveSession(user);
-        return user;
-      }
-    } catch (_) {}
-
-    // Simulated new registration with bonus
-    final newUser = UserModel(
-      id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
-      fullName: fullName,
-      phone: phone,
-      email: '$phone@service.com',
-      role: 'user',
-      isVerified: false,
-      level: 'New',
-      avgRating: 5.0,
-      referralCode: 'REF${phone.substring(phone.length > 4 ? phone.length - 4 : 0)}',
-      walletBalance: (referralCode != null && referralCode.isNotEmpty) ? 200.0 : 100.0,
-      token: 'jwt_reg_${DateTime.now().millisecondsSinceEpoch}',
-    );
-
-    await _saveSession(newUser);
-    return newUser;
-  }
-
-  /// Verify OTP Login
-  Future<UserModel> verifyOtp({
-    required String phone,
-    required String otp,
-  }) async {
-    final user = UserModel(
-      id: 'usr_${phone.hashCode.abs()}',
-      fullName: 'ভেরিফায়েড মোবাইল ইউজার',
-      phone: phone,
-      email: '$phone@service.com',
-      role: 'provider',
-      isVerified: true,
-      level: 'Silver',
-      avgRating: 4.9,
-      referralCode: 'OTP88',
-      walletBalance: 150.0,
-      token: 'jwt_otp_${DateTime.now().millisecondsSinceEpoch}',
-    );
-
-    await _saveSession(user);
-    return user;
-  }
-
-  /// Toggle or update verification status
-  Future<void> setVerified(bool verified) async {
+  /// Update verified status directly (for simulation / quick toggle)
+  void setVerified(bool verified) {
     if (_currentUser != null) {
       _currentUser = _currentUser!.copyWith(isVerified: verified);
+      _saveSession(_currentUser!);
+    }
+  }
+
+  /// Submit NID & Face Verification (Module 1)
+  Future<void> submitNidVerification({
+    required String nidNumber,
+    required String nidFrontImage,
+    required String nidBackImage,
+    required String selfieImage,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(isVerified: true);
       await _saveSession(_currentUser!);
     }
   }

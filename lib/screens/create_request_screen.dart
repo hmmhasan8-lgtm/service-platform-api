@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class CreateRequestScreen extends StatefulWidget {
   final VoidCallback onRequestCreated;
@@ -24,6 +25,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
     {'name': 'প্লাম্বিং সার্ভিস (Plumbing)', 'icon': Icons.plumbing, 'fee': 60},
     {'name': 'যানবাহন ও লজিস্টিকস (Rental)', 'icon': Icons.directions_car, 'fee': 120},
     {'name': 'হোম ক্লিনিং (Cleaning)', 'icon': Icons.cleaning_services, 'fee': 80},
+    {'name': 'ডেলিভারি পার্সেল (Delivery)', 'icon': Icons.local_shipping, 'fee': 40},
   ];
 
   @override
@@ -59,9 +61,9 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           icon: const Icon(Icons.check_circle, color: Color(0xFF059669), size: 54),
           title: const Text('রিকোয়েস্ট সফলভাবে পাঠানো হয়েছে!', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           content: const Text(
-            'আপনার রিকোয়েস্ট কাছাকাছি ৫ কিমি দূরত্বের ভেরিফায়েড প্রোভাইডারদের কাছে পাঠানো হয়েছে। যিনি আগে গ্রহণ করবেন, শুধু তার সাথেই সংযোগ স্থাপিত হবে।',
+            'আপনার রিকোয়েস্ট কাছাকাছি ৫ কিমি দূরত্বের ভেরিফায়েড প্রোভাইডারদের কাছে নোটিফিকেশন অ্যালার্ট আকারে পাঠানো হয়েছে। যিনি আগে গ্রহণ করবেন, তার সাথেই সংযোগ স্থাপিত হবে।\n\nপোস্টের সময়সীমা Author কর্তৃক নির্দিষ্ট (৭ দিন)।',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+            style: TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.4),
           ),
           actions: [
             ElevatedButton(
@@ -92,6 +94,32 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
         title: const Text('সার্ভিসের জন্য আবেদন করুন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'পেজ ব্যবহারের নিয়ম',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('আবেদন করার নিয়মাবলী', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  content: const Text(
+                    '১. আপনার কি সেবা প্রয়োজন তা সংক্ষেপে লিখুন।\n'
+                    '২. আপনার আনুমানিক এলাকা ও সম্ভাব্য বাজেট উল্লেখ করুন।\n'
+                    '৩. শুধুমাত্র NID ভেরিফাইড ইউজাররাই আবেদন প্রচার বা গ্রহণ করতে পারবেন।\n'
+                    '৪. আবেদন জমা দিলে ৫ কিমি এলাকার ভেরিফাইড প্রোভাইডারদের কাছে পুশ নোটিফিকেশন অ্যালার্ট যাবে।\n'
+                    '৫. Author এর পলিসি অনুযায়ী প্রতিটি আবেদনের কার্যকারিতা ৭ দিন বলবৎ থাকবে।',
+                    style: TextStyle(fontSize: 12, height: 1.5),
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('বুঝেছি')),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -140,102 +168,93 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
-            // Step 1: Category selection
-            const Text('১. সেবার ক্যাটাগরি নির্বাচন করুন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
-            const SizedBox(height: 10),
+            const Text('ক্যাটাগরি বেছে নিন *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+            const SizedBox(height: 8),
+
+            // Category Chips Grid
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: _categories.map((cat) {
                 final isSelected = _selectedCategory == cat['name'];
                 return ChoiceChip(
-                  label: Text('${cat['name']} (৳${cat['fee']})'),
+                  avatar: Icon(cat['icon'] as IconData, size: 16, color: isSelected ? Colors.white : primaryColor),
+                  label: Text('${cat['name']} (ফি ৳${cat['fee']})', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : const Color(0xFF1E293B))),
                   selected: isSelected,
-                  selectedColor: const Color(0xFFD1FAE5),
-                  labelStyle: TextStyle(
-                    color: isSelected ? const Color(0xFF065F46) : const Color(0xFF334155),
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 12,
-                  ),
-                  avatar: Icon(cat['icon'] as IconData, size: 16, color: isSelected ? const Color(0xFF065F46) : const Color(0xFF64748B)),
-                  onSelected: (sel) {
-                    if (sel) setState(() => _selectedCategory = cat['name'] as String);
+                  selectedColor: primaryColor,
+                  backgroundColor: const Color(0xFFF1F5F9),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  onSelected: (val) {
+                    if (val) setState(() => _selectedCategory = cat['name'] as String);
                   },
                 );
               }).toList(),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Step 2: Form fields
-            const Text('২. কাজের বিবরণ ও আপনার লোকেশন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
-            const SizedBox(height: 10),
-
-            TextFormField(
+            // Title
+            TextField(
               controller: _titleController,
               decoration: InputDecoration(
-                labelText: 'কাজের শিরোনাম *',
-                hintText: 'যেমন: ১.৫ টন স্প্লিট এসি গ্যাস রিফিল ও সার্ভিসিং',
+                labelText: 'কিসের সেবা প্রয়োজন? (সংক্ষেপে লিখুন) *',
+                hintText: 'যেমন: ১.৫ টন জেনারেল স্প্লিট এসি গ্যাস চার্জ',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.handyman_outlined),
               ),
             ),
             const SizedBox(height: 12),
 
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _locationController,
-                    decoration: InputDecoration(
-                      labelText: 'আপনার এলাকা / লোকেশন *',
-                      hintText: 'মিরপুর ১০, ঢাকা',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      prefixIcon: const Icon(Icons.location_on_outlined),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _budgetController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'আনুমানিক বাজেট',
-                      hintText: '১৫০০',
-                      prefixText: '৳ ',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
+            // Location
+            TextField(
+              controller: _locationController,
+              decoration: InputDecoration(
+                labelText: 'আপনার এলাকা বা লোকেশন *',
+                hintText: 'মিরপুর ১০, ঢাকা',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.location_on_outlined),
+              ),
             ),
             const SizedBox(height: 12),
 
-            TextFormField(
+            // Budget
+            TextField(
+              controller: _budgetController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'প্রস্তাবিত বাজেট (টাকা)',
+                hintText: '১৫০০',
+                prefixText: '৳ ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.payments_outlined),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Additional details
+            TextField(
               controller: _detailsController,
               maxLines: 3,
               decoration: InputDecoration(
-                labelText: 'বিস্তারিত বিবরণ (ঐচ্ছিক)',
-                hintText: 'সমস্যা বা প্রয়োজনীয়তার বিস্তারিত লিখুন...',
+                labelText: 'বিস্তারিত বিবরণ (কখন প্রয়োজন, কাজের ধরন ইত্যাদি)',
+                hintText: 'আগামীকাল সকাল ১০টার মধ্যে আসা সম্ভব হলে ভালো হয়...',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            ElevatedButton.icon(
-              onPressed: _isSubmitting ? null : _handleSubmit,
-              icon: const Icon(Icons.send_rounded),
-              label: _isSubmitting
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('কাছাকাছি প্রোভাইডারদের খুঁজুন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+              onPressed: _isSubmitting ? null : _handleSubmit,
+              child: _isSubmitting
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('আবেদন সম্প্রচার করুন (Broadcast Request)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ),
           ],
         ),

@@ -5,11 +5,15 @@ import '../services/auth_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final String entityKey;
+  final String? initialSectionKey;
+  final EntityRecord? editRecord;
   final VoidCallback onPostCreated;
 
   const CreatePostScreen({
     super.key,
     this.entityKey = 'vehicles',
+    this.initialSectionKey,
+    this.editRecord,
     required this.onPostCreated,
   });
 
@@ -20,20 +24,54 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _titleController = TextEditingController();
-  final _locationController = TextEditingController();
-
-  // Dynamic 15 Columns field controllers
+  late TextEditingController _titleController;
+  late TextEditingController _locationController;
   final Map<String, TextEditingController> _colControllers = {};
+  
+  String _selectedSectionKey = 'rent';
   String _selectedFuelType = 'CNG';
   String? _leakWarning;
   bool _isSubmitting = false;
 
+  // Camera & Image simulation state
+  bool _hasAttachedPhoto = false;
+  String _attachedPhotoType = 'ক্যামেরা থেকে তোলা সার্ভিস ছবি 📸';
+
   @override
   void initState() {
     super.initState();
+    final edit = widget.editRecord;
+
+    _titleController = TextEditingController(text: edit?.title ?? '');
+    _locationController = TextEditingController(text: edit?.approxLocation ?? '');
+    _selectedSectionKey = edit?.sectionKey ?? widget.initialSectionKey ?? 'rent';
+
     for (int i = 1; i <= 15; i++) {
-      _colControllers['custom_col_$i'] = TextEditingController();
+      String initialVal = '';
+      if (edit != null) {
+        switch (i) {
+          case 1: initialVal = edit.customCol1 ?? ''; break;
+          case 2: initialVal = edit.customCol2 ?? ''; break;
+          case 3: initialVal = edit.customCol3 ?? ''; break;
+          case 4: initialVal = edit.customCol4 ?? ''; break;
+          case 5: initialVal = edit.customCol5 ?? ''; break;
+          case 6: initialVal = edit.customCol6 ?? ''; break;
+          case 7: initialVal = edit.customCol7 ?? ''; break;
+          case 8: initialVal = edit.customCol8 ?? ''; break;
+          case 9: initialVal = edit.customCol9 ?? ''; break;
+          case 10: initialVal = edit.customCol10 ?? ''; break;
+          case 11: initialVal = edit.customCol11 ?? ''; break;
+          case 12: initialVal = edit.customCol12 ?? ''; break;
+          case 13: initialVal = edit.customCol13 ?? ''; break;
+          case 14: initialVal = edit.customCol14 ?? ''; break;
+          case 15: initialVal = edit.customCol15 ?? ''; break;
+        }
+      }
+      _colControllers['custom_col_$i'] = TextEditingController(text: initialVal);
+    }
+
+    if (edit?.customCol1 != null && ['CNG', 'Petrol', 'Octane', 'Electric'].contains(edit!.customCol1)) {
+      _selectedFuelType = edit.customCol1!;
     }
   }
 
@@ -47,12 +85,78 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     super.dispose();
   }
 
-  /// Strict Contact Leakage Check (> 5 digits anywhere in public fields)
+  /// Strict Contact Leakage Check (> 5 digits in public fields)
   bool _checkContactLeak(String text) {
     if (text.isEmpty) return false;
-    // Check if more than 5 digits clustered together or in total
     final digits = text.replaceAll(RegExp(r'[^0-9০-৯]'), '');
     return digits.length > 5;
+  }
+
+  void _handleSimulateCamera() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.camera_alt, color: Color(0xFF1E3A8A), size: 24),
+                SizedBox(width: 10),
+                Text('ক্যামেরা পারমিশন ও ছবি সংযুক্তি', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'পোস্টের বিশ্বাসযোগ্যতা বাড়াতে সরাসরি ক্যামেরা দিয়ে লাইভ ছবি তুলুন অথবা গ্যালারি থেকে যুক্ত করুন।',
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 18),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFEFF6FF),
+                child: Icon(Icons.photo_camera, color: Color(0xFF1E3A8A)),
+              ),
+              title: const Text('লাইভ ক্যামেরা খুলুন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: const Text('ক্যামেরা পারমিশন অনুমোদিত ✅', style: TextStyle(fontSize: 11, color: Color(0xFF059669))),
+              onTap: () {
+                Navigator.pop(ctx);
+                setState(() {
+                  _hasAttachedPhoto = true;
+                  _attachedPhotoType = 'লাইভ ক্যামেরা শট (Live Photo Capture) 📸';
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('📸 ছবি সফলভাবে ক্যামেরা থেকে সংযুক্ত হয়েছে!')),
+                );
+              },
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFF1F5F9),
+                child: Icon(Icons.photo_library, color: Color(0xFF475569)),
+              ),
+              title: const Text('গ্যালারি থেকে নির্বাচন করুন', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              onTap: () {
+                Navigator.pop(ctx);
+                setState(() {
+                  _hasAttachedPhoto = true;
+                  _attachedPhotoType = 'গ্যালারি ইমেজ (Gallery Asset) 🖼️';
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('🖼️ গ্যালারি থেকে ছবি সফলভাবে যুক্ত হয়েছে!')),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _handleSubmit() {
@@ -92,26 +196,67 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     final user = AuthService().currentUser;
 
+    if (widget.editRecord != null) {
+      // Edit existing post
+      final updatedCols = <String, String>{};
+      for (int i = 1; i <= 15; i++) {
+        final val = _colControllers['custom_col_$i']?.text.trim();
+        if (val != null && val.isNotEmpty) {
+          updatedCols['custom_col_$i'] = val;
+        }
+      }
+      if (_selectedSectionKey == 'rent') {
+        updatedCols['custom_col_1'] = _selectedFuelType;
+      }
+
+      ApiService().editRecord(
+        widget.editRecord!.id,
+        newTitle: title,
+        newLocation: location,
+        updatedColumns: updatedCols,
+      );
+
+      widget.onPostCreated();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🎉 পোস্টটি সফলভাবে আপডেট করা হয়েছে!'),
+          backgroundColor: Color(0xFF059669),
+        ),
+      );
+      Navigator.pop(context);
+      return;
+    }
+
+    // Create brand new post
     final newRecord = EntityRecord(
       id: 'post_${DateTime.now().millisecondsSinceEpoch}',
       title: title,
       entityKey: widget.entityKey,
+      sectionKey: _selectedSectionKey,
       country: 'BD',
       approxLocation: location,
       userName: user?.fullName ?? 'নতুন প্রোভাইডার',
+      userId: user?.id,
       isVerified: user?.isVerified ?? false,
       userAvgRating: user?.avgRating ?? 5.0,
       totalReviews: 1,
       userLevel: user?.level ?? 'New',
-      customCol1: _selectedFuelType,
+      userAvatarUrl: user?.isVerified == true
+          ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+          : null,
+      customCol1: _selectedSectionKey == 'rent' ? _selectedFuelType : (_colControllers['custom_col_1']?.text.trim() ?? 'সেবা'),
       customCol2: _colControllers['custom_col_2']?.text.trim().isEmpty == true ? '5000' : _colControllers['custom_col_2']!.text.trim(),
       customCol3: _colControllers['custom_col_3']?.text.trim().isEmpty == true ? '500' : _colControllers['custom_col_3']!.text.trim(),
-      customCol4: _colControllers['custom_col_4']?.text.trim().isEmpty == true ? '2019' : _colControllers['custom_col_4']!.text.trim(),
+      customCol4: _colControllers['custom_col_4']?.text.trim().isEmpty == true ? '2022' : _colControllers['custom_col_4']!.text.trim(),
       customCol5: _colControllers['custom_col_5']?.text.trim().isEmpty == true ? '4' : _colControllers['custom_col_5']!.text.trim(),
       customCol6: _colControllers['custom_col_6']?.text.trim().isEmpty == true ? (user?.phone ?? '+8801711223344') : _colControllers['custom_col_6']!.text.trim(),
-      customCol7: _colControllers['custom_col_7']?.text.trim().isEmpty == true ? 'House 22, Road 4, Sector 7, Dhaka' : _colControllers['custom_col_7']!.text.trim(),
+      customCol7: _colControllers['custom_col_7']?.text.trim().isEmpty == true ? 'উত্তরা সেক্টর ৭, ঢাকা' : _colControllers['custom_col_7']!.text.trim(),
+      reactionsCount: 0,
+      acceptedCount: 0,
       isUnlocked: false,
       unlockPriceUsd: 1.0,
+      authorValidityDays: 7, // Author কর্তৃক নির্দিষ্ট সময়সীমা (৭ দিন)
     );
 
     ApiService().addRecord(newRecord);
@@ -130,12 +275,42 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFF1E3A8A);
+    final isEditing = widget.editRecord != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('পোস্ট তৈরি করুন (15-Columns)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(
+          isEditing ? 'পোস্ট এডিট করুন' : 'নতুন পোস্ট তৈরি করুন',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'পেজ ব্যবহারের নিয়ম',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('পোস্ট তৈরির নিয়মাবলী', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  content: const Text(
+                    '১. সঠিক ক্যাটাগরি ও সেকশন বেছে নিন (ভাড়া, মার্কেট, ডেলিভারি, মজদুরি)।\n'
+                    '২. টাইটেল ও এলাকার নাম স্পষ্ট করে লিখুন।\n'
+                    '৩. পাবলিক ফিল্ডে ফোন নাম্বার দেওয়া নিষিদ্ধ (অ্যালগরিদম ৫টির বেশি ডিজিট পেলে পোস্ট আটকে দেবে)।\n'
+                    '৪. আপনার ফোন ও সুনির্দিষ্ট ঠিকানা নিচে প্রাইভেট বক্সে দিন—আনলক ফি প্রদানের পরই অন্য ব্যবহারকারী দেখতে পাবেন।\n'
+                    '৫. ক্যামেরা বাটন প্রেস করে সার্ভিসের বাস্তব ছবি যুক্ত করুন।',
+                    style: TextStyle(fontSize: 12, height: 1.5),
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('বুঝেছি')),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -144,37 +319,83 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header Card
+              // Section Selector (Author Driven Multi-Section Architecture)
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'পোস্টের সেকশন নির্বাচন করুন *',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ApiService.sections
+                          .where((s) => s['key'] != 'all')
+                          .map((sec) {
+                        final isSel = _selectedSectionKey == sec['key'];
+                        return ChoiceChip(
+                          label: Text(
+                            sec['label_bn'] as String,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                              color: isSel ? Colors.white : const Color(0xFF334155),
+                            ),
+                          ),
+                          selected: isSel,
+                          selectedColor: primaryColor,
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          onSelected: (val) {
+                            if (val) setState(() => _selectedSectionKey = sec['key'] as String);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Banner Notice
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.blue.shade200),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: primaryColor, size: 24),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.info_outline, color: primaryColor, size: 22),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: const [
-                          Text('১৫টি ডায়নামিক কলাম সিস্টেম', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13)),
+                          Text('১৫টি ডায়নামিক কলাম সিস্টেম (Author Driven)', style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 12)),
                           SizedBox(height: 2),
-                          Text('পাবলিক ফিল্ডে সরাসরি ফোন নম্বর বা ঠিকানা দেওয়া নিষিদ্ধ। ব্যক্তিগত তথ্য স্বয়ংক্রিয়ভাবে লক করা থাকবে।', style: TextStyle(fontSize: 11, color: Color(0xFF334155))),
+                          Text('পাবলিক ফিল্ডে সরাসরি ফোন নম্বর দেওয়া নিষিদ্ধ। যোগাযোগের তথ্য স্বয়ংক্রিয়ভাবে লক থাকবে।', style: TextStyle(fontSize: 11, color: Color(0xFF334155))),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               if (_leakWarning != null)
                 Container(
                   padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 14),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF2F2),
                     borderRadius: BorderRadius.circular(12),
@@ -199,7 +420,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 controller: _titleController,
                 decoration: InputDecoration(
                   labelText: 'পোস্টের শিরোনাম (Title) *',
-                  hintText: 'যেমন: Toyota Axio 2018 - Personal Used',
+                  hintText: 'যেমন: Toyota Axio 2018 - ব্যক্তিগত ব্যবহারে নিখুঁত',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.title),
                 ),
@@ -216,51 +437,114 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   prefixIcon: const Icon(Icons.location_on_outlined),
                 ),
               ),
+              const SizedBox(height: 14),
+
+              // Camera and Photos Upload Block
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.camera_alt, color: Color(0xFF1E3A8A)),
+                      onPressed: _handleSimulateCamera,
+                      tooltip: 'ক্যামেরা থেকে ছবি নিন',
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _hasAttachedPhoto ? _attachedPhotoType : 'ক্যামেরা / ছবি সংযুক্তি (ঐচ্ছিক)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: _hasAttachedPhoto ? const Color(0xFF059669) : const Color(0xFF334155),
+                            ),
+                          ),
+                          const Text(
+                            'ক্যামেরা পারমিশন ও ফাইল স্ক্যানিং সক্ষম',
+                            style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: _handleSimulateCamera,
+                      child: Text(_hasAttachedPhoto ? 'পরিবর্তন' : 'ক্যামেরা'),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 18),
 
-              const Text('পাবলিক ফিল্ডসমূহ (সকলের জন্য দৃশ্যমান)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
+              const Text('পাবলিক ফিল্ডসমূহ (সকলের জন্য দৃশ্যমান)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
               const SizedBox(height: 10),
 
-              // Column 1: Fuel Type Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedFuelType,
-                decoration: InputDecoration(
-                  labelText: 'জ্বালানির ধরন (custom_col_1)',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.local_gas_station),
+              // Fuel Type (If rent section)
+              if (_selectedSectionKey == 'rent') ...[
+                DropdownButtonFormField<String>(
+                  value: _selectedFuelType,
+                  decoration: InputDecoration(
+                    labelText: 'জ্বালানির ধরন (custom_col_1)',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.local_gas_station),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'CNG', child: Text('CNG')),
+                    DropdownMenuItem(value: 'Petrol', child: Text('Petrol')),
+                    DropdownMenuItem(value: 'Octane', child: Text('Octane')),
+                    DropdownMenuItem(value: 'Electric', child: Text('Electric (EV)')),
+                  ],
+                  onChanged: (val) => setState(() => _selectedFuelType = val ?? 'CNG'),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'CNG', child: Text('CNG')),
-                  DropdownMenuItem(value: 'Petrol', child: Text('Petrol')),
-                  DropdownMenuItem(value: 'Octane', child: Text('Octane')),
-                  DropdownMenuItem(value: 'Electric', child: Text('Electric (EV)')),
-                ],
-                onChanged: (val) => setState(() => _selectedFuelType = val ?? 'CNG'),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ] else ...[
+                TextFormField(
+                  controller: _colControllers['custom_col_1'],
+                  decoration: InputDecoration(
+                    labelText: 'ক্যাটাগরি বা কাজের ধরন (custom_col_1)',
+                    hintText: 'যেমন: ইলেকট্রিক ওয়্যারিং / ডেলিভারি পার্সেল',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.category_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
-              // Column 2: Security Deposit
+              // Column 2: Price / Deposit
               TextFormField(
                 controller: _colControllers['custom_col_2'],
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'জামানতের পরিমাণ (custom_col_2)',
+                  labelText: _selectedSectionKey == 'rent' ? 'জামানতের পরিমাণ (custom_col_2)' : 'মূল্য / পারিশ্রমিক (custom_col_2)',
                   hintText: '৫০০০',
                   prefixText: '৳ ',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.attach_money),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Column 3: Hourly Rate
+              // Column 3: Rate / Warranty
               TextFormField(
                 controller: _colControllers['custom_col_3'],
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'ঘণ্টাপ্রতি ভাড়া (custom_col_3)',
+                  labelText: _selectedSectionKey == 'rent' ? 'ঘণ্টাপ্রতি ভাড়া (custom_col_3)' : 'ভিজিটিং চার্জ বা রেট (custom_col_3)',
                   hintText: '৪৫০',
                   prefixText: '৳ ',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.timer_outlined),
                 ),
               ),
               const SizedBox(height: 12),
@@ -271,31 +555,29 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _colControllers['custom_col_4'],
-                      keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'মডেল সাল (col_4)',
-                        hintText: '2018',
+                        labelText: 'মডেল / অভিজ্ঞতা (col_4)',
+                        hintText: '2019 / 5 yrs',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: TextFormField(
                       controller: _colControllers['custom_col_5'],
-                      keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'আসন সংখ্যা (col_5)',
-                        hintText: '4',
+                        labelText: 'আসন / কন্ডিশন (col_5)',
+                        hintText: '৪ জন / Chilled AC',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Private Columns Section
+              // Private Box
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -333,7 +615,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       controller: _colControllers['custom_col_7'],
                       decoration: InputDecoration(
                         labelText: 'গ্যারেজের নির্ভুল ঠিকানা (custom_col_7) 🔒',
-                        hintText: 'House 12, Road 4, Sector 7, Uttara, Dhaka',
+                        hintText: 'উত্তরা সেক্টর ৭, রোড ৪, বাসা ১২, ঢাকা',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -346,10 +628,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: _isSubmitting ? null : _handleSubmit,
-                icon: const Icon(Icons.send_rounded),
+                icon: Icon(isEditing ? Icons.check_circle : Icons.send_rounded),
                 label: _isSubmitting
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('পোস্ট প্রকাশ করুন (Publish Post)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    : Text(
+                        isEditing ? 'পরিবর্তন সংরক্ষণ করুন (Save Edits)' : 'পোস্ট প্রকাশ করুন (Publish Post)',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,

@@ -22,7 +22,7 @@ class ServiceApp extends StatefulWidget {
 }
 
 class _ServiceAppState extends State<ServiceApp> {
-  bool _isAuthenticated = true; // Default to true after initialization, toggleable
+  bool _isAuthenticated = false; // Opens Login/Register on first launch!
 
   @override
   void initState() {
