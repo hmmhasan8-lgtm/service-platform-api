@@ -215,7 +215,7 @@ class _FeedScreenState extends State<FeedScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: const [
@@ -348,7 +348,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.between,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: const [
@@ -514,7 +514,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.emerald.shade50, borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(10)),
                         child: const Icon(Icons.account_balance_wallet, color: Color(0xFF059669), size: 24),
                       ),
                       const SizedBox(width: 12),
@@ -795,7 +795,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   const SizedBox(height: 10),
                   Text(user?.fullName ?? 'ব্যবহারকারী', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                   Text(user?.phone ?? 'মোবাইল নম্বর', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                  Text('ব্যালেন্স: ৳${user?.walletBalance ?? 100} • Level: ${user?.level ?? "New"}', style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                  Text('ব্যালেন্স: ৳${user?.walletBalance ?? 100} • Level: ${user?.level ?? "New"}', style: const TextStyle(color: const Color(0xFFFBBF24), fontSize: 11, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -947,7 +947,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   value: code,
                   child: Text('${_countryConfigs[code]!['flag']} $code', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 );
-              }).toList>,
+              }).toList(),
               onChanged: (code) {
                 if (code != null) {
                   setState(() => _selectedCountry = code);
@@ -1234,7 +1234,7 @@ class _FeedScreenState extends State<FeedScreen> {
           children: [
             // Top Row: Category + Approx Location + Edit/Delete Menu
             Row(
-              mainAxisAlignment: MainAxisAlignment.between,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1481,7 +1481,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.between,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           children: const [

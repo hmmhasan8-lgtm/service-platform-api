@@ -263,7 +263,7 @@ class _SingleWinnerScreenState extends State<SingleWinnerScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.between,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('সেবা গ্রহীতার রিকোয়েস্ট', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         Container(
@@ -363,7 +363,7 @@ class _SingleWinnerScreenState extends State<SingleWinnerScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.between,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Column(
